@@ -33,6 +33,7 @@ except ImportError:
 
 from . import authorizer, googlemaps
 from . authorizer import CLIENT_ID, headers
+from . lazy import LazyDict
 from abc import abstractmethod, ABCMeta
 from PIL import Image
 from requests import HTTPError
@@ -46,7 +47,7 @@ class AuthSetup(object):
     Airbnb authorization setup base class
     '''
     def __init__(self, auth=None):
-            self.api_url = API_URL
+        self.api_url = API_URL
         self.auth = auth or authorizer.current_auth
         self.session = None
         self.uid = None
@@ -67,74 +68,6 @@ class AuthSetup(object):
         return
 
 
-class Searcher(AuthSetup):
-        '''
-        Search airbnb using various class get methods. The methods return Query
-        objects with semi-organized data. Query objects are also stored in 
-        various class variables (listings, users, reviews, etc...)
-
-        Available search methods:
-            - get_listings()
-            - get_listing()
-            - get_user()
-            - get_reviews()
-
-        Parameters
-        ----------
-        auth : Auth instance, default None
-            A pyairbnb Auth object to use for connecting to airbnb with a valid
-            username and password.
-        '''
-    def __init__(self, auth=None):
-        super(Searcher, self).__init__(auth)
-        self.listings = None
-        self.searches = {}
-        self.users = {}
-        self.reviews = None
-        self.last_url = ''
-
-    def get_listings(self, location='', **kwargs):
-        '''
-        Gather all airbnb listings from a location.
-
-        Parameters
-        ----------
-        location : str, default ""
-            A location (e.g. "Portland, ME") to search for airbnb listings
-        kwargs : various
-            Additional parameters to pass to airbnb api url. See api
-            documentation for available paramters.
-
-        Returns
-        -------
-        Search instance with all attached listings
-        '''
-        search = Search(query=data, auth=self.auth)
-        self.listings = search
-        self.searches.update({location:search})
-        return search
-
-    def get_user(self, user_id, **kwargs):
-        session = self.session
-        endpoint = 'users/{}?'.format(user_id)
-        url = self._setup_url(endpoint, **kwargs)
-        res = session.get(url)
-        res.raise_for_status()
-        data = res.json()
-        user = User(data)
-        self.users.update({user.user_id:user})
-        return user
-
-    def get_reviews(self):
-        pass
-
-    def get_listing(self, listing_id):
-        pass
-
-    def scan(self):
-        pass
-
-
 @add_metaclass(ABCMeta)
 class Query(AuthSetup):
     '''
@@ -143,13 +76,14 @@ class Query(AuthSetup):
     def __init__(self, query=None, auth=None):
         super(Query, self).__init__(auth)
         self.query = query
+        self._data = None
         self.results = None
         self.image_fields = []
         self.images = {}
         self._viewer = None
 
     def __str__(self):
-        self.results
+        return self.results.__str__()
 
     @abstractmethod
     def _parse_query(self):
@@ -175,7 +109,8 @@ class Query(AuthSetup):
 
         for key in images:
             res = requests.get(self.images[key])
-            img = Image.open(StringIO(res.content))
+            res.raise_for_status()
+            img = Image.open(BytesIO(res.content))
             yield img.show()
 
     def view(self):
@@ -186,7 +121,7 @@ class Query(AuthSetup):
             self._viewer = self._view()
 
         try:
-            self._viewer.next()
+            next(self._viewer)
         except StopIteration:
             self._viewer = None
             self.view()
@@ -202,13 +137,12 @@ class Search(Query):
                              'thumbnail_url',
                              'xl_picture_url',
                              'xl_picture_urls']
+        self.users = LazyUsers()
+        self.listings = LazyListings()
         self._parse_query()
 
         if location and not query:
             self.get_listings(location, **kwargs)
-
-    def __str__(self):
-        return self.results.to_string()
 
     def _parse_query(self):
         query = copy.deepcopy(self.query)
@@ -233,39 +167,21 @@ class Search(Query):
                   for k, v in iteritems(listings)}
 
         try:
-            data = pd.DataFrame.from_dict(listings, orient='index')
+            self._data = listings
+            results = pd.DataFrame.from_dict(listings, orient='index')
         except NameError:
-            data = listings
+            results = listings
 
-        self._listings = listings
-        self.users = users
+        self._listings_additional = listings
+        self.listings.update({k:k for k in listings})
+        self._users_additional = users
+        self.users.update({k:k for k in users})
         self.hosts = hosts
         self.quotes = quotes
         self.images = images
-        self.results = data
+        self.results = results
         self.metadata = metadata
         return
-
-    #~ @property
-    #~ def users():
-        #~ return self._users
-
-    #~ @users.setter
-    #~ def users():
-        #~ pass
-
-    #~ def _lazy_user(self, propery_id):
-        #~ user = self._users[property_id]
-
-        #~ if not isinstance(user, User):
-            #~ s = Searcher()
-            #~ endpoint = 'users/{}?'.format(user_id)
-            #~ res = session.get(url)
-            #~ res.raise_for_status()
-            #~ data = res.json()
-            #~ user = User(data)
-            #~ self.users.update({user.user_id:user})
-        #~ return user
 
     def get_listings(self, location='', **kwargs):
         '''
@@ -391,13 +307,29 @@ class User(Query):
         images = {i:res.pop(i) for i in self.image_fields if i in res}
 
         try:
-            data = pd.DataFrame.from_dict({user_id:res}, orient='index')
-        except NameError:
+            self._data = res
+            data = pd.DataFrame({user_id:res})
+        except NameError as e:
             data = res
+
         self.user_id = user_id
         self.images = images
         self.results = data
         self.metadata = metadata
+        return
+
+    def _add_data(self, **kwargs):
+        data = self._data
+        new_values = set(kwargs) - set(data)
+        data.update({k:kwarg[k] for k in new_values})
+
+        try:
+            self._data = data
+            data = pd.DataFrame({self.user_id:data})
+        except NameError:
+            pass
+
+        self.results = data
         return
 
     def get_user(self, user_id, **kwargs):
@@ -412,13 +344,173 @@ class User(Query):
 
 
 class Listing(Query):
-    def __init__(self, **kwargs):
-        super(Listing, self).__init__(**kwargs)
+    def __init__(self, listing_id='', query=None, auth=None, **kwargs):
+        super(Listing, self).__init__(query, auth)
+        self.listing_id = listing_id
+        self.image_fields = ['picture_url',
+                             'picture_urls',
+                             'thumbnail_url',
+                             'thumbnail_urls',
+                             'map_image_url',
+                             'medium_url',
+                             'xl_picture_url',
+                             'xl_picture_urls']
+        self._parse_query()
+
+        if listing_id:
+            self.get_listing(listing_id, **kwargs)
+
+    def _parse_query(self):
+        query = copy.deepcopy(self.query)
+
+        if not query:
+            return
+
+        metadata = query['metadata']
+        res = query['listing']
+        listing_id = res['id']
+
+        # seperate image info
+        images = {i:res.pop(i) for i in self.image_fields if i in res}
+        unpackable = [i for i in images if i.endswith('s')]
+        unpacked = {'{} {}'.format(i, c):l for i in unpackable for c, l in enumerate(images.pop(i))}
+        images.update(unpacked)
+
+        # seperate user info
+        user = res.pop('user')['user']
+
+        try:
+            self._data = res
+            res = pd.DataFrame({listing_id:res})
+            user = pd.DataFrame.from_dict({user['id']:user})
+        except NameError as e:
+            pass
+
+        self.listing_id = listing_id
+        self.images = images
+        self.results = res
+        self.metadata = metadata
+        return
+
+    def get_listing(self, listing_id, **kwargs):
+        session = self.session
+        endpoint = 'listings/{}?'.format(listing_id)
+        kwargs['_format'] = 'v1_legacy_for_p3'
+        url = self._setup_url(endpoint, **kwargs)
+        res = session.get(url)
+        res.raise_for_status()
+        self.query = res.json()
+        self._parse_query()
+        return
 
 
 class Review(Query):
     def __init__(self, **kwargs):
         super(Review, self).__init__(**kwargs)
+
+
+class LazyUsers(LazyDict):
+    class_ = User
+
+
+class LazyListings(LazyDict):
+    class_ = Listing
+
+
+class Searcher(AuthSetup):
+    '''
+    Search airbnb using various "get" methods. The methods return Query
+    objects with semi-organized airbnb data. Query objects are also stored in 
+    various class variables (listings, users, reviews, etc...)
+
+    Available search methods:
+        - get_listings()
+        - get_listing()
+        - get_user()
+        - get_reviews()
+
+    Parameters
+    ----------
+    auth : Auth instance, default None
+        A pyairbnb Auth object to use for connecting to airbnb with a valid
+        username and password.
+    '''
+    def __init__(self, auth=None):
+        super(Searcher, self).__init__(auth)
+        self.listings = None
+        self.searches = {}
+        self.users = {}
+        self.reviews = None
+        self.last_url = ''
+
+    def get_listings(self, location='', **kwargs):
+        '''
+        Gather all airbnb listings from a location.
+
+        Parameters
+        ----------
+        location : str, default ""
+            A location (e.g. "Portland, ME") to search for airbnb listings
+        kwargs : various
+            Additional parameters to pass to airbnb api url. See api
+            documentation for available parameters.
+
+        Returns
+        -------
+        Search object with all attached listings
+        '''
+        search = Search(query=data, auth=self.auth)
+        self.listings = search
+        self.searches.update({location:search})
+        return search
+
+    def get_user(self, user_id, **kwargs):
+        '''
+        Get user info for one user by airbnb user_id number.
+
+        Parameters
+        ----------
+        user_id : int
+            An airbnb user_id number.
+        kwargs : various
+            Additional parameters to pass to airbnb api url. See api
+            documentation for available parameters.
+
+        Returns
+        -------
+        User object with all attached listings
+        '''
+        user = User(user_id, **kwargs)
+        self.users.update({user_id:user})
+        return user
+
+    def get_reviews(self):
+        raise(NotImplementedError)
+
+    def get_listing(self, listing_id, **kwargs):
+        '''
+        Get data for one airbnb listing by listing id.
+
+        Parameters
+        ----------
+        listing_id : int
+            An airbnb listing_id number.
+        kwargs : various
+            Additional parameters to pass to airbnb api url. See api
+            documentation for available parameters.
+
+        Returns
+        -------
+        User object with all attached listings
+        '''
+        listing = Listing(listing_id)
+        self.listings.update({listing_id:listing})
+        return listing
+
+    def scan(self):
+        # todo auto grab all listings and users then combine data
+        raise(NotImplementedError)
+
 
 
 def main():

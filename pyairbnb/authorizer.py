@@ -47,17 +47,11 @@ class Auth(object):
         self.uid = data["user"]["user"]["id"]
         current_auth = self
 
-    def get_profile(self):
-        session = self.session
-        uid = self.uid
-        res = session.get('{}/v1/users/{}'.format(URL, uid))
-        res.raise_for_status()
-        return res.json()
-
 
 def main():
     auth = Auth('anakastakis@gmail.com', 'icecream1')
     prof = auth.get_profile()
     print(prof)
+
 if __name__ == "__main__":
     main()
