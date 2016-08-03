@@ -8,12 +8,11 @@ Download, cd to folder, and type:
 python setup.py install
 ```
 
-## Example usage
+## Retriving Data
 
-### Login
+Before retriving data you can optionally login to Airbnb using your username and password, However for simple querying of listing and user information this is unnecessary.
 
-You can optionally login to airbnb using the authorizer module. For public endpoints you do
-not have to login.
+Login example:
 
 ```python
 from pyairbnb.authorizer import Auth
@@ -21,8 +20,10 @@ from pyairbnb.authorizer import Auth
 auth = Auth('airbnb username', 'airbnb password')
 ```
 
-### Retrieving listings information for a location
+There are multiple options for querying data. The quickest way to get started is to create a Searcher instance, and to use the 
+built-in get methods. All methods return a Query object, but data is also saved in the instance results, users, and listings attributes. 
 
+To get listings data for a location:
 ```python
 import pyairbnb
 
@@ -31,48 +32,49 @@ listings = s.get_listings('Portland, ME')
 print(listings.results) # listings all saved in s.results
 ```
 
-View a map of the listings with markers
-
-```python
-listings.view()
-```
-
-User information for a listing can be found in the users dict by listing id.
-Data for the user is lazily downloaded on access.
-
-```python
-u = s.users[listing id number]
-print(u.results)
-```
-
-Airbnb API Parameters can be passed to get_listings as keyword argument. For more information on
-possible parameters check out this website, [Airbnb API docs](http://airbnbapi.org/)
-
-### Retrieving single listing information
+To get a single listing information by id
 
 ```python
 listing = s.get_listing(listing id number)
 print(listing.results)
 ```
 
-Cycle through listing photos
-
-```python
-listing.view()
-listing.view()
-```
-
-### Retrieving a users information
+To get a single users information by id
 
 ```python
 user = s.get_user(user id number)
 print(user.results)
 ```
 
-Cycle through user photos
+The results attribute will return a pandas DataFrame (or dict if pandas is not installed), which will contain a variety of listing information. The users and listings attributes are dictionaries containing users or listings from a search. Data for users and listings are lazily downloaded on access.
 
 ```python
-user.view()
-user.view()
+u = s.users[listing id number]
+print(u.results)
 ```
 
+You can download a map with markers of the listing search using the view method.
+
+```python
+listings.view()
+```
+
+You can also cycle through individual listing and user images using the view method on the Query objects.
+```python
+u.view()
+u.view()
+
+l.view()
+```
+
+You can also use the Query methods themselves to get data bypassing the higher level Searcher object.
+
+
+## Parameters
+Airbnb API Parameters can be passed to get_listings as keyword argument. For more information on
+possible parameters check out this website, [Airbnb API docs](http://airbnbapi.org/)
+
+
+## Future
+
+Other private API endpoints will be added. 
