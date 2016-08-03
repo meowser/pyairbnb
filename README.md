@@ -8,32 +8,71 @@ Download, cd to folder, and type:
 python setup.py install
 ```
 
-## Retrieving listings for a location
+## Example usage
+
+### Login
+
+You can optionally login to airbnb using the authorizer module. For public endpoints you do
+not have to login.
+
+```python
+from pyairbnb.authorizer import Auth
+
+auth = Auth('airbnb username', 'airbnb password')
+```
+
+### Retrieving listings information for a location
+
 ```python
 import pyairbnb
 
-listings = pyairbnb.Search('Portland, ME')
-print(listings) # results also saved in s.results
+s = pyairbnb.Searcher()
+listings = s.get_listings('Portland, ME')
+print(listings.results) # listings all saved in s.results
 ```
+
 View a map of the listings with markers
+
 ```python
 listings.view()
 ```
-Airbnb API Parameters can be passed to get_listings as keyword argument
 
-## Retrieving listing information
+User information for a listing can be found in the users dict by listing id.
+Data for the user is lazily downloaded on access.
+
 ```python
-l = pyairbnb.Listing(listing id number)
-print(l.results)
+u = s.users[listing id number]
+print(u.results)
 ```
+
+Airbnb API Parameters can be passed to get_listings as keyword argument. For more information on
+possible parameters check out this website, [Airbnb API docs](http://airbnbapi.org/)
+
+### Retrieving single listing information
+
+```python
+listing = s.get_listing(listing id number)
+print(listing.results)
+```
+
 Cycle through listing photos
+
 ```python
-l.view()
-l.view()
+listing.view()
+listing.view()
 ```
 
-## Retrieving user information
+### Retrieving a users information
+
 ```python
-user = pyairbnb.User(user_id)
+user = s.get_user(user id number)
 print(user.results)
 ```
+
+Cycle through user photos
+
+```python
+user.view()
+user.view()
+```
+
