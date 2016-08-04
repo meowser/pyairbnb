@@ -1,12 +1,22 @@
-# pyairbnb 
-A Python interface to the Airbnb unofficial API
+# pyairbnb
 
-##Installation
+A Python interface to the Airbnb unofficial API.
 
-Download, cd to folder, and type:
+
+## Installation
+
+This package is compatible with Python 2 and 3.
+To install, download and in the pyairbnb folder type:
+
 ```shell
 python setup.py install
 ```
+
+## Dependencies
+- [six](https://pypi.python.org/pypi/six/)
+- [requests](http://docs.python-requests.org/en/master/)
+- [pandas](http://pandas.pydata.org/) (optional)
+  - for organizing search data
 
 ## Retriving Data
 
@@ -16,17 +26,15 @@ Login example:
 
 ```python
 from pyairbnb.authorizer import Auth
-
 auth = Auth('airbnb username', 'airbnb password')
 ```
 
-There are multiple options for querying data. The quickest way to get started is to create a Searcher instance, and to use the 
-built-in get methods. All methods return a Query object, but data is also saved in the instance results, users, and listings attributes. 
+There are multiple options for querying data. The quickest way to get started is to create a pyairbnb Searcher instance, and to use the builtin get methods. All get methods return a Query object with the resulting Airbnb data. Data is also saved in the Searcher instance results, users, and listings attributes.
 
 To get listings data for a location:
+
 ```python
 import pyairbnb
-
 s = pyairbnb.Searcher()
 listings = s.get_listings('Portland, ME')
 print(listings.results) # listings all saved in s.results
@@ -61,10 +69,9 @@ listings.view()
 
 You can also cycle through individual listing and user images using the view method on the Query objects.
 ```python
+# cycle through a users images
 u.view()
 u.view()
-
-l.view()
 ```
 
 You can also use the Query methods themselves to get data bypassing the higher level Searcher object.
@@ -74,6 +81,9 @@ You can also use the Query methods themselves to get data bypassing the higher l
 Airbnb API Parameters can be passed to get_listings as keyword argument. For more information on
 possible parameters check out this website, [Airbnb API docs](http://airbnbapi.org/)
 
+## License
+
+[MIT License](http://opensource.org/licenses/MIT)
 
 ## Future
 
