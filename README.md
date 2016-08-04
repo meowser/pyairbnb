@@ -37,20 +37,22 @@ To get listings data for a location:
 import pyairbnb
 s = pyairbnb.Searcher()
 listings = s.get_listings('Portland, ME')
-print(listings.results) # listings all saved in s.results
+print(listings.results) # listings also saved in s.results
 ```
 
 To get a single listing information by id
 
 ```python
-listing = s.get_listing(listing id number)
+listing_id = 12345678
+listing = s.get_listing(listing_id)
 print(listing.results)
 ```
 
 To get a single users information by id
 
 ```python
-user = s.get_user(user id number)
+user_id = 54321
+user = s.get_user(user_id)
 print(user.results)
 ```
 
@@ -76,7 +78,6 @@ u.view()
 
 You can also use the Query methods themselves to get data bypassing the higher level Searcher object.
 
-
 ## Parameters
 Airbnb API Parameters can be passed to get_listings as keyword argument. For more information on
 possible parameters check out this website, [Airbnb API docs](http://airbnbapi.org/)
@@ -85,6 +86,6 @@ possible parameters check out this website, [Airbnb API docs](http://airbnbapi.o
 
 [MIT License](http://opensource.org/licenses/MIT)
 
-## Future
+## In development
 
 Other private API endpoints will be added. 
