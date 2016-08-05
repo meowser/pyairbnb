@@ -467,6 +467,8 @@ class Searcher(AuthSetup):
         search = Search(location, auth=self.auth)
         self.results = search.results
         self.searches.update({location:search})
+        s.users.update(search.users)
+        s.listings.update(search.listings)
         return search
 
     def get_user(self, user_id, **kwargs):
