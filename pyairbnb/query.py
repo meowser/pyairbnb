@@ -260,8 +260,12 @@ class Search(Query):
         '''
         df = self.results
 
-        if df.empty:
-            return
+        try:
+            if df.empty:
+                return
+        except AttributeError:
+            raise NotImplementedError('View method currently only available '
+                                      'with pandas installed')
 
         for f, value in iteritems(filtrate):
             try:
@@ -404,9 +408,9 @@ class Listing(Query):
         return
 
 
-class Review(Query):
-    def __init__(self, **kwargs):
-        super(Review, self).__init__(**kwargs)
+#~ class Review(Query):
+    #~ def __init__(self, **kwargs):
+        #~ super(Review, self).__init__(**kwargs)
 
 
 class LazyUsers(LazyDict):
@@ -427,7 +431,7 @@ class Searcher(AuthSetup):
         - get_listings()
         - get_listing()
         - get_user()
-        - get_reviews()
+        - get_reviews() * not implemented yet
 
     Parameters
     ----------
@@ -438,6 +442,7 @@ class Searcher(AuthSetup):
     def __init__(self, auth=None):
         super(Searcher, self).__init__(auth)
         self.listings = None
+        self.results = None
         self.searches = {}
         self.users = {}
         self.reviews = None
@@ -459,8 +464,8 @@ class Searcher(AuthSetup):
         -------
         Search object with all attached listings
         '''
-        search = Search(query=data, auth=self.auth)
-        self.listings = search
+        search = Search(location, auth=self.auth)
+        self.results = search.results
         self.searches.update({location:search})
         return search
 

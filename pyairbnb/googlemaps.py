@@ -21,7 +21,12 @@ import re
 import requests
 
 from ast import literal_eval
-from json import JSONDecodeError
+
+try:
+    from json import JSONDecodeError
+except ImportError:
+    pass
+
 from PIL import Image
 from requests import HTTPError
 

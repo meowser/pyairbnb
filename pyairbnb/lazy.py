@@ -16,11 +16,14 @@ from six import iteritems, add_metaclass
 #------------------------------------------#
 
 from abc import abstractmethod, ABCMeta
-from collections import UserDict
 
+try:
+    from collections import UserDict
+except ImportError:
+    from UserDict import UserDict
 
 @add_metaclass(ABCMeta)
-class LazyDict(UserDict):
+class LazyDict(UserDict, object):
     '''
     '''
     class_ = None

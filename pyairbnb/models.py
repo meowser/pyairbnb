@@ -15,7 +15,7 @@ from __future__ import absolute_import
 from six import iteritems
 #------------------------------------------#
 
-from . auth import current_auth
+from . authorizer import current_auth
 
 search_params = {'locale': '',
                  'currency': '',
@@ -38,33 +38,6 @@ search_params = {'locale': '',
                  'user_lng': ''}
 
 search_url = ('https://api.airbnb.com/v2/search_results?')
-
-
-class AirData(object):
-    def __init__(self, auth=None):
-        self.auth = auth or current_auth
-        assert self.auth
-
-
-class Search(AirData):
-    def __init__(self, auth=None):
-        super(Search, self).__init__(**kwargs)
-
-
-class User(AirData):
-    def __init__(self, auth=None):
-        super(User, self).__init__(**kwargs)
-
-
-class Listing(AirData):
-    def __init__(self, auth=None):
-        super(Listing, self).__init__(**kwargs)
-
-
-class Review(AirData):
-    def __init__(self, auth=None):
-        super(Listing, self).__init__(**kwargs)
-
 
 
 def main():
