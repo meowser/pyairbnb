@@ -223,7 +223,6 @@ class Search(Query):
         for page in range(pages):
             off = offset + max_items
             url = url.replace('_offset={}'.format(offset), '_offset={}'.format(off))
-            print(url)
             res = session.get(url)
             res.raise_for_status()
             new_listings = res.json()['search_results']
@@ -441,12 +440,11 @@ class Searcher(AuthSetup):
     '''
     def __init__(self, auth=None):
         super(Searcher, self).__init__(auth)
-        self.listings = None
-        self.results = None
+        self.listings = LazyListings()
         self.searches = {}
-        self.users = {}
+        self.users = LazyUsers()
         self.reviews = None
-        self.last_url = ''
+        self.results = None
 
     def get_listings(self, location='', **kwargs):
         '''
