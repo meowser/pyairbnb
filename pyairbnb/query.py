@@ -440,8 +440,8 @@ class Searcher(AuthSetup):
     '''
     def __init__(self, auth=None):
         super(Searcher, self).__init__(auth)
-        self.listings = LazyListings()
         self.searches = {}
+        self.listings = LazyListings()
         self.users = LazyUsers()
         self.reviews = None
         self.results = None
@@ -465,8 +465,8 @@ class Searcher(AuthSetup):
         search = Search(location, auth=self.auth)
         self.results = search.results
         self.searches.update({location:search})
-        s.users.update(search.users)
-        s.listings.update(search.listings)
+        self.users.update({k:k for k in search.users.keys()})
+        self.listings.update({k:k for k in search.listings.keys()})
         return search
 
     def get_user(self, user_id, **kwargs):

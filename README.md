@@ -15,6 +15,7 @@ python setup.py install
 ## Dependencies
 - [six](https://pypi.python.org/pypi/six/)
 - [requests](http://docs.python-requests.org/en/master/)
+- [pillow](https://python-pillow.org/)
 - [pandas](http://pandas.pydata.org/) (optional)
   - for organizing search data
 
@@ -56,10 +57,10 @@ user = s.get_user(user_id)
 print(user.results)
 ```
 
-The results attribute will return a pandas DataFrame (or dict if pandas is not installed), which will contain a variety of listing information. The users and listings attributes are dictionaries containing users or listings from a search. Data for users and listings are lazily downloaded on access.
+The results attribute will return a pandas DataFrame (or dict if pandas is not installed), which will contain a variety of listing information. The users and listings attributes are dictionaries containing users or listings from a search. Extra data for users and listings are lazily downloaded on access.
 
 ```python
-u = s.users[listing id number]
+u = s.users['listing_id_number']
 print(u.results)
 ```
 

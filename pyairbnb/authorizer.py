@@ -11,9 +11,9 @@ headers = {"Accept": "application/json",
 
 
 class AuthError(Exception):
-    def __init__(*args, **kwargs):
-        super(AuthError, self).__init()
-
+    '''
+    Custom Exception for airbnb failed login
+    '''
 
 class Auth(object):
     def __init__(self,
